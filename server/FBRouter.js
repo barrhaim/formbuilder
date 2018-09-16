@@ -1,3 +1,4 @@
+const request = require("request");
 const express = require("express");
 const app = express();
 const FBRouter = express.Router();
@@ -22,9 +23,34 @@ FBRouter.route("/edit/:id").get(function(req, res) {
 });
 
 FBRouter.route("/form").post(function(req, res) {
-  DBmanager.insertUserData(
-    req.body.form_id,
-    JSON.stringify(req.body.user_data)
+  console.log("token is:" + req.body.recap);
+  request.post(
+    "https://www.google.com/recaptcha/api/siteverify",
+    {
+      form: {
+        secret: "6LfuZ3AUAAAAAEr0uujZr48FU02R6aILmndOVm1k",
+        response: req.body.recap,
+        remoteip: req.connection.remoteAddress
+      }
+    },
+    (err, httpResponse, body) => {
+      if (err) {
+        console.log("recp error");
+        res.send("");
+      } else {
+        const r = JSON.parse(body);
+        if (r.success) {
+          DBmanager.insertUserData(
+            req.body.form_id,
+            JSON.stringify(req.body.user_data)
+          );
+          res.send("");
+        } else {
+          console.log("error");
+          res.send("");
+        }
+      }
+    }
   );
 });
 

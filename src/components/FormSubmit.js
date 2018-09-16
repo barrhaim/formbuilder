@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import axios from "axios";
+import ReCAPTCHA from "react-google-recaptcha";
+
 /**
  * @name FormSubmit
  * this component renders and submit auto generated forms
@@ -18,7 +20,8 @@ export default class FormSubmit extends Component {
       user_data: [],
       form_data: [],
       form_name: "",
-      form_id: this.props.match.params.id
+      form_id: this.props.match.params.id,
+      g_recaptcha_response: "blah"
     };
   }
   onSubmit(e) {
@@ -28,20 +31,25 @@ export default class FormSubmit extends Component {
     }
     const to_server = {
       form_id: this.state.form_id,
-      user_data: this.state.user_data
+      user_data: this.state.user_data,
+      recap: this.state.g_recaptcha_response
     };
-    axios
-      .post("http://localhost:4200/builder/form", to_server)
-      .then(res => console.log(res.data));
-    this.setState({
-      user_data: [],
-      form_data: [],
-      form_name: "",
-      form_id: this.props.match.params.id,
-      counter: 0
+    axios.post("http://localhost:4200/builder/form", to_server).then(res => {
+      console.log("responsecode");
+      this.setState({
+        user_data: [],
+        form_data: [],
+        form_name: "",
+        form_id: this.props.match.params.id,
+        counter: 0
+      });
+      window.location.replace("/");
     });
-    window.location.replace("/");
   }
+
+  onloadCallback = function() {
+    console.log("grecaptcha is ready!");
+  };
   componentDidMount() {
     axios
       .get("http://localhost:4200/builder/edit/" + this.props.match.params.id)
@@ -55,9 +63,19 @@ export default class FormSubmit extends Component {
         console.log(error);
       });
   }
+  onChange(response) {
+    this.setState({
+      g_recaptcha_response: response
+    });
+  }
   render() {
     return (
       <div style={{ marginTop: 50 }}>
+        <ReCAPTCHA
+          ref="recaptcha"
+          sitekey="6LfuZ3AUAAAAACb3NErq_kdc2Wc8s5US9oWD90t-"
+          onChange={this.onChange.bind(this)}
+        />
         <h3>{this.state.form_name}</h3>
         <form onSubmit={this.onSubmit}>
           {this.state.form_data.map(f => (
@@ -71,7 +89,6 @@ export default class FormSubmit extends Component {
               />
             </div>
           ))}
-
           <div className="form-group">
             <input
               type="submit"
